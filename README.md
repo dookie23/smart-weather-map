@@ -1,4 +1,5 @@
-# Polymer workshop - DEMO - Talking with the map, listening your weather 
+# Polymer workshop
+# DEMO - Talking with the map, listening your weather 
 
 This demo app:
 * consumes [Open Weather Map API] (http://openweathermap.org/api) to obtain data about weather in a city
