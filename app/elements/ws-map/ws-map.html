@@ -1,0 +1,167 @@
+<link rel="import" href="../../../bower_components/polymer/polymer.html">
+
+<polymer-element name="ws-map" attributes="">
+    <template>
+        <div style="height:20px"></div>
+        <div id="mapContainer" layout horizontal center center-justified>
+            <core-ajax id="weather" url="http://api.openweathermap.org/data/2.5/weather?q={{cityName}}&lang=es&units=metric" handleAs="json" on-core-response="{{handleResponse}}"></core-ajax>
+
+            <google-map id="map" style="height:600px; width:600px" map="{{map}}" latitude="37.779" longitude="-122.3892" fitToMarkers>
+
+                <google-map-search map="{{map}}" query="Pizza" result="{{result}}"></google-map-search>
+
+                <template repeat="{{loc in locations}}">
+                    <google-map-marker id="gmm{{loc.id}}" latitude={{loc.coord.lat}} longitude={{loc.coord.lon}} title="{{loc.name}}" icon="http://openweathermap.org/img/w/{{loc.weather[0].icon}}.png">
+
+                    </google-map-marker>
+
+                    <voice-player autoplay accent="es-ES" text="{{loc.name}}.
+ temperatura actual: {{loc.main.temp | filterTemp}} grados, mínima: {{loc.main.temp_min | filterTemp}}, máxima: {{loc.main.temp_max | filterTemp}}. {{loc.weather[0].description}}.
+ Tu tiempo... y cada día el de más gente"></voice-player>
+                </template>
+
+
+            </google-map>
+        </div>
+
+        <div style="height:20px"></div>
+
+        <div id="inputContainer" layout horizontal center center-justified>
+
+            <paper-input id="cityInput" label="{{ label }}" floatingLabel="{{ floatingLabel }}" value="{{valueI}}" disabled?="{{disabled}}">
+                <input is="core-input" id="input" value="{{value}}" committedValue="{{committedValue}}" on-change="{{changeAction}}" disabled?="{{disabled}}">
+                </paper-input-decorator>
+        </div>
+
+        <div id="buttonContainer" layout horizontal center center-justified>
+
+            <paper-fab id="sendIcon" icon="search" on-tap="{{ send }}" style="background-color: #009688">
+            </paper-fab>
+            <paper-fab icon="av:hearing" on-tap="{{ activate }}" style="background-color: #009688">
+            </paper-fab>
+        </div>
+
+        <voice-recognition continuous="true" id="vr"></voice-recognition>
+
+        <style>
+        :host {
+            display: block;
+        }
+        </style>
+    </template>
+    <script>
+    (function() {
+        Polymer({
+            locations: [],
+            vrstatus: false,
+            cityName: "",
+            floatingLabel: "City Name",
+            label: "Vigo",
+            value: "Vigo",
+            one: false,
+
+            /**
+            * Element life-cycle (Ready)
+            *
+            */
+            ready: function() {
+                var that = this;
+
+                this.value = "Vigo";
+
+                /**
+                * Voice recognition handler
+                */
+                this.$.vr.addEventListener('result', function(e) {
+                    that.cityName = e.detail.result.replace(that.cityName, "");
+                    that.$.vr.stop();
+                });
+
+                /**
+                * City name input onfocus handler
+                *
+                * @param {} event 
+                */
+                this.$.cityInput.onfocus = function(event) {
+                    this.label = "City Name"
+                };
+
+                this.cityName = "Vigo";
+
+            },
+
+            /**
+            * Filter to replace '.' with ',' (string with numbers)
+            *
+            * @param {string} value A decimal number in string format (e.g. 9.324)
+            * @return {string} A String with '.' replaced by ',' (e.g. 9,324) 
+            */
+            filterTemp: function(value) {
+                return (value + '').replace(".", ",");
+            },
+
+            /**
+            * Search button handler
+            *
+            */
+            send: function() {
+                this.cityName = this.$.cityInput.value;
+            },
+
+            /**
+            * Core Ajax response handler
+            * @param {object} event
+            * @param {object} response Response obtained from source
+            */
+            handleResponse: function(event, response) {
+
+                try {
+                    this.locations = [response.response];
+                } catch (err) {
+                    console.log("Ha habido un error con la consulta");
+                }
+            },
+
+            /**
+             * cityName changed handler
+             *
+             * @param {string}
+             * @param {string}
+             */
+            cityNameChanged: function(oldV, newV) {
+                console.log("Searching for: " + this.cityName);
+                console.log(this.$.weather.url);
+                this.$.weather.go();
+            },
+
+            /*
+            * Voice recognition activation
+            *
+            */
+            activate: function() {
+                console.log("start micro");
+                this.$.vr.start();
+                this.vrstatus = true;
+            },
+
+            /**
+            * Toggle voice recognition
+            *
+            */
+            toggle: function() {
+                console.log("toggle");
+                if (this.vrstatus == true) {
+                    console.log("stop micro");
+                    this.$.vr.stop();
+                    this.vrstatus = false;
+                } else {
+                    console.log("start micro");
+                    this.$.vr.start();
+
+                    this.vrstatus = true;
+                }
+            }
+        });
+    })();
+    </script>
+</polymer-element>
